@@ -3,12 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 )
 
-// model for course - file
+// model
 type Course struct {
 	CourseId    string  `json:"courseid"`
 	CourseName  string  `json:"coursename"`
@@ -22,20 +25,40 @@ type Author struct {
 }
 
 // fake DB
-var course []Course
+var courses []Course
 
-// middleware, helper - file
+// helper
 func (c *Course) IsEmpty() bool {
-	return c.CourseId == "" && c.CourseName == ""
+	return c.CourseName == ""
 }
 
 func main() {
-	fmt.Println("hi")
+	fmt.Println("Server started at :4000")
+
+	// router
+	r := mux.NewRouter()
+
+	// seed some data
+	courses = append(courses, Course{
+		CourseId:    "1",
+		CourseName:  "Go Basics",
+		CoursePrice: 100,
+		Author: &Author{
+			Fullname: "John Doe",
+			Website:  "example.com",
+		},
+	})
+
+	// routes
+	r.HandleFunc("/", serveHome).Methods("GET")
+	r.HandleFunc("/courses", getAllCourses).Methods("GET")
+	r.HandleFunc("/course/{id}", getOneCourse).Methods("GET")
+	r.HandleFunc("/course", createOneCourse).Methods("POST")
+
+	http.ListenAndServe(":4000", r)
 }
 
-// controllers - files
-
-// serve home route
+// controllers
 
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("<h1>Welcome to API</h1>"))
@@ -44,25 +67,51 @@ func serveHome(w http.ResponseWriter, r *http.Request) {
 func getAllCourses(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Get all courses")
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(course)
+	json.NewEncoder(w).Encode(courses)
 }
 
 func getOneCourse(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Get one course")
 	w.Header().Set("Content-Type", "application/json")
 
-	// params grab id from request
 	params := mux.Vars(r)
 
-	// loop through courses and find matching id
-	for _, course := range course {
-		if course.CourseId == params["id"] {
-			json.NewEncoder(w).Encode(course)
+	for _, item := range courses {
+		if item.CourseId == params["id"] {
+			json.NewEncoder(w).Encode(item)
 			return
 		}
 	}
 
-	// send response if not found
 	json.NewEncoder(w).Encode(map[string]string{"error": "No course found"})
+}
 
+func createOneCourse(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Create one course")
+	w.Header().Set("Content-Type", "application/json")
+
+	if r.Body == nil {
+		json.NewEncoder(w).Encode(map[string]string{"error": "Please provide course"})
+		return
+	}
+
+	var newCourse Course
+	err := json.NewDecoder(r.Body).Decode(&newCourse)
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]string{"error": "Invalid JSON"})
+		return
+	}
+
+	if newCourse.IsEmpty() {
+		json.NewEncoder(w).Encode(map[string]string{"error": "Empty course"})
+		return
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	newCourse.CourseId = strconv.Itoa(rand.Intn(10000))
+
+	// append to global slice
+	courses = append(courses, newCourse)
+
+	json.NewEncoder(w).Encode(newCourse)
 }
