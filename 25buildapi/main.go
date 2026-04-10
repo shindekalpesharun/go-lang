@@ -54,6 +54,7 @@ func main() {
 	r.HandleFunc("/courses", getAllCourses).Methods("GET")
 	r.HandleFunc("/course/{id}", getOneCourse).Methods("GET")
 	r.HandleFunc("/course", createOneCourse).Methods("POST")
+	r.HandleFunc("/course/{id}", updateOneCourse).Methods("PUT")
 
 	http.ListenAndServe(":4000", r)
 }
@@ -114,4 +115,20 @@ func createOneCourse(w http.ResponseWriter, r *http.Request) {
 	courses = append(courses, newCourse)
 
 	json.NewEncoder(w).Encode(newCourse)
+}
+
+func updateOneCourse(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Update one course")
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	for index, item := range courses {
+		if item.CourseId == params["id"] {
+			courses = append(courses[:index], courses[index+1:]...)
+			return
+		}
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"error": "No course found"})
 }
