@@ -55,6 +55,8 @@ func main() {
 	r.HandleFunc("/course/{id}", getOneCourse).Methods("GET")
 	r.HandleFunc("/course", createOneCourse).Methods("POST")
 	r.HandleFunc("/course/{id}", updateOneCourse).Methods("PUT")
+	r.HandleFunc("/course/{id}", deleteOneCourse).Methods("DELETE")
+	r.HandleFunc("/course", deleteAllCourses).Methods("DELETE")
 
 	http.ListenAndServe(":4000", r)
 }
@@ -137,4 +139,28 @@ func updateOneCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"error": "No course found"})
+}
+
+func deleteOneCourse(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Delete one course")
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+
+	for index, item := range courses {
+		if item.CourseId == params["id"] {
+			courses = append(courses[:index], courses[index+1:]...)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Course deleted successfully"})
+			return
+		}
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"error": "No course found"})
+}
+
+// delete all course
+func deleteAllCourses(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Delete all courses")
+	courses = []Course{}
+	json.NewEncoder(w).Encode(map[string]string{"message": "All courses deleted successfully"})
 }
