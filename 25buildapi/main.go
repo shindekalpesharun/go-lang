@@ -126,6 +126,12 @@ func updateOneCourse(w http.ResponseWriter, r *http.Request) {
 	for index, item := range courses {
 		if item.CourseId == params["id"] {
 			courses = append(courses[:index], courses[index+1:]...)
+
+			var updatedCourse Course
+			_ = json.NewDecoder(r.Body).Decode(&updatedCourse)
+			updatedCourse.CourseId = params["id"]
+			courses = append(courses, updatedCourse)
+			json.NewEncoder(w).Encode(updatedCourse)
 			return
 		}
 	}
