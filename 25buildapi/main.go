@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"strconv"
@@ -58,7 +59,7 @@ func main() {
 	r.HandleFunc("/course/{id}", deleteOneCourse).Methods("DELETE")
 	r.HandleFunc("/course", deleteAllCourses).Methods("DELETE")
 
-	http.ListenAndServe(":4000", r)
+	log.Fatal(http.ListenAndServe(":4000", r))
 }
 
 // controllers
